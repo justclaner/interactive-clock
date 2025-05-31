@@ -1,6 +1,6 @@
 import {useState, useEffect, useRef} from 'react'
 
-const Clock = () => {
+const Clock = ({inputHour, inputMinute, inputSecond}) => {
   const minutes = new Array(60).fill(null);
   const hours = new Array(12).fill(null);
 
@@ -29,9 +29,9 @@ const Clock = () => {
 
   const [isDragging, setIsDragging] = useState(false);
 
-  const [hour, setHour] = useState(0);
-  const [minute, setMinute] = useState(0);
-  const [second, setSecond] = useState(0);
+  const [hour, setHour] = useState(inputHour + (inputMinute / 60) + (inputSecond / 3600));
+  const [minute, setMinute] = useState(inputMinute + inputSecond / 60);
+  const [second, setSecond] = useState(inputSecond);
 
   const [hourAngle, setHourAngle] = useState(90);
   const [minuteAngle, setMinuteAngle] = useState(90);
@@ -40,14 +40,17 @@ const Clock = () => {
   const [centerX, setCenterX] = useState(null);
   const [centerY, setCenterY] = useState(null);
 
-  const [showSecondHand, setShowSecondHand] = useState(true);
+  const [showSecondHand, setShowSecondHand] = useState(false);
   const [showMinuteHand, setShowMinuteHand] = useState(true);
+  const [showHourHand, setShowHourHand] = useState(true);
 
   const [showMinuteExtension, setShowMinuteExtension] = useState(false);
   const [showHourExtension, setShowHourExtension] = useState(false);
 
   const [minuteMarkersMode, setMinuteMarkersMode] = useState(0);
   const [showMinuteNumbers, setShowMinuteNumbers] = useState(false);
+
+  const [showDragIcons, setShowDragIcons] = useState(false);
 
   const [showTime, setShowTime] = useState(true);
 
@@ -75,6 +78,9 @@ const Clock = () => {
         case 'M':
             setShowMinuteNumbers(!showMinuteNumbers);
             break;
+        case 'h':
+            setShowHourHand(!showHourHand);
+            break;
         case 'e':
             setShowHourExtension(!showHourExtension)
             break;
@@ -89,6 +95,9 @@ const Clock = () => {
             break;
         case 'f':
             setMilitaryTime(!militaryTime);
+            break;
+        case 'o':
+            setShowDragIcons(!showDragIcons);
             break;
         case ' ':
             setShowTime(!showTime);
@@ -111,11 +120,6 @@ const Clock = () => {
   }, [isDragging])
 
   useEffect(() => {
-    //console.log(second);
-    // let newSecondAngle = 90;
-    // if (second != 0) {
-    //   newSecondAngle
-    // }
     setSecondAngle(90 - (second == 0 ? 0 : (second * 6)));
     setMinuteAngle(90 - (minute == 0 ? 0 : (minute * 6)));
     setHourAngle(90 - (hour == 0 ? 0 : (hour * 30)));
@@ -153,19 +157,64 @@ const Clock = () => {
     }
 
     if (hand == 'second') {
-      setSecond((second + delta / 6) % 60);
-      setMinute((minute + delta / (6 * 60)) % 60);
-      setHour((hour + delta / (6 * 3600)) % (militaryTime ? 24 : 12));
+      let newSecond = (second + delta / 6) % 60;
+      while (newSecond < 0) {
+        newSecond += 60;
+      }
+
+      let newMinute = (minute + delta / (6 * 60)) % 60;
+      while (newMinute < 0) {
+        newMinute += 60;
+      }
+
+      let newHour = (hour + delta / (6 * 3600)) % (militaryTime ? 24 : 12);
+      while (newHour < 0) {
+        newHour += 12;
+      }
+
+      setSecond(newSecond);
+      setMinute(newMinute);
+      setHour(newHour);
 
     } else if (hand == 'minute') {
-      setSecond((second + 10 * delta) % 60);
-      setMinute((minute + delta / 6) % 60);
-      setHour((hour + delta / (6 * 60)) % (militaryTime ? 24 : 12));
+      let newSecond = (second + 10 * delta) % 60;
+      while (newSecond < 0) {
+        newSecond += 60;
+      }
+
+      let newMinute = (minute + delta / 6) % 60;
+      while (newMinute < 0) {
+        newMinute += 60;
+      }
+
+      let newHour = (hour + delta / (6 * 60)) % (militaryTime ? 24 : 12);
+      while (newHour < 0) {
+        newHour += 12;
+      }
+
+      setSecond(newSecond);
+      setMinute(newMinute);
+      setHour(newHour);
 
     } else if (hand == 'hour') {
-      setSecond((second + 120 * delta) % 60);
-      setMinute((minute + 2 * delta) % 60);
-      setHour((hour + delta / 30) % (militaryTime ? 24 : 12));
+      let newSecond = (second + 120 * delta) % 60;
+      while (newSecond < 0) {
+        newSecond += 60;
+      }
+
+      let newMinute = (minute + 2 * delta) % 60;
+      while (newMinute < 0) {
+        newMinute += 60;
+      }
+
+      let newHour = (hour + delta / 30) % (militaryTime ? 24 : 12);
+      while (newHour < 0) {
+        newHour += 12;
+      }
+
+      setSecond(newSecond);
+      setMinute(newMinute);
+      setHour(newHour);
 
     }
   }
@@ -193,7 +242,7 @@ const Clock = () => {
 
   return (
     <div 
-    className='flex flex-row justify-between pb-[100px] mt-[50px]'>
+    className='flex flex-row justify-between py-[100px]'>
       <div 
         style={{width:`${clockWidth}vh`, height:`${clockWidth}vh`}} 
         className='flex m-auto w-[80vh] h-[80vh] shrink-0 rounded-[50%] border-10 border-black relative'
@@ -201,6 +250,7 @@ const Clock = () => {
             handleKeyDown(e.key);
         }}
         tabIndex={0}
+        draggable={false}
       >
         {hours.map((_, i) => 
           <div 
@@ -237,15 +287,23 @@ const Clock = () => {
                 {/* Numbers */}
                 {showMinuteNumbers && <div 
                     style={{
-                    translate: `calc(-50% + ${Math.cos(degToRad(84 - 6 * i)) * minuteNumberDistance}vh) calc(-50% - ${Math.sin(degToRad(84 - 6 * i)) * minuteNumberDistance}vh)`
+                    translate: `calc(-50% + ${Math.cos(degToRad(90 - 6 * i)) * minuteNumberDistance}vh) calc(-50% - ${Math.sin(degToRad(90 - 6 * i)) * minuteNumberDistance}vh)`
                     }}
                     key={`number${i}`}
-                    className='absolute left-[50%] top-[50%] text-[16px] text-center select-none'
-                >{i + 1}</div>}
+                    className='absolute left-[50%] top-[50%] text-[20px] text-center select-none'
+                >{i}</div>}
             </div>
         )}
         {/* Hour Hand */}
-        <div
+        {showHourHand && showHourExtension && <div
+        style={{
+            width: `${hourHandWidth}%`,
+            height: `${clockRadius}vh`,
+            rotate: `calc(90deg - ${hourAngle}deg)`
+        }}
+        className='absolute left-[50%] top-[50%] translate-x-[-50%] translate-y-[-100%] origin-bottom border-2 border-neutral-300 bg-black z-10 opacity-25' />}
+
+        {showHourHand && <div
         style={{
             width: `${hourHandWidth}%`,
             height: `${hourHandLength}vh`,
@@ -256,9 +314,10 @@ const Clock = () => {
             style={{
             width: `${dragCircleWidth}vh`,
             height: `${dragCircleWidth}vh`,
-            translate: `calc(-50% + ${(hourHandWidth * clockWidth / 250)}vh`
+            translate: `calc(-50% + ${(hourHandWidth * clockWidth / 250)}vh`,
+            opacity: showDragIcons ? `10%` : `0%`
             }}
-            className='relative mb-auto mt-[-5px] border-2 border-black border-dashed rounded-[50%] opacity-10'
+            className='relative mb-auto mt-[-5px] border-2 border-black border-dashed rounded-[50%]'
             draggable={true}
             onDragStart={(e) => {
             setIsDragging(true);
@@ -274,16 +333,18 @@ const Clock = () => {
             setIsDragging(false);
             }}
           />
-        </div>
-        {showHourExtension && <div
-        style={{
-            width: `${hourHandWidth}%`,
-            height: `${clockRadius}vh`,
-            rotate: `calc(90deg - ${hourAngle}deg)`
-        }}
-        className='absolute left-[50%] top-[50%] translate-x-[-50%] translate-y-[-100%] origin-bottom border-2 border-neutral-300 bg-black z-10 opacity-25' />}
+        </div>}
 
         {/* Minute Hand */}
+        {showMinuteHand && showMinuteExtension && <div 
+        style={{
+            width: `${minuteHandWidth}%`,
+            height: `${clockRadius}vh`,
+            rotate: `calc(90deg - ${minuteAngle}deg)`
+        }}
+        className='absolute left-[50%] top-[50%] translate-x-[-50%] translate-y-[-100%] origin-bottom border border-neutral-300 bg-black z-20 opacity-25' 
+        />}
+
         {showMinuteHand && <div 
         style={{
             width: `${minuteHandWidth}%`,
@@ -296,9 +357,10 @@ const Clock = () => {
             style={{
                 width: `${dragCircleWidth}vh`,
                 height: `${dragCircleWidth}vh`,
-                translate: `calc(-50% + ${minuteHandWidth * clockWidth / 250}vh)`
+                translate: `calc(-50% + ${minuteHandWidth * clockWidth / 250}vh)`,
+                opacity: showDragIcons ? `10%` : `0%`
             }}
-            className='relative mb-auto mt-[-3px] border-2 border-black border-dashed rounded-[50%] opacity-10'
+            className='relative mb-auto mt-[-3px] border-2 border-black border-dashed rounded-[50%]'
             draggable={true}
             onDragStart={(e) => {
                 setIsDragging(true);
@@ -315,15 +377,6 @@ const Clock = () => {
             }}
         />
         </div>}
-
-        {showMinuteHand && showMinuteExtension && <div 
-        style={{
-            width: `${minuteHandWidth}%`,
-            height: `${clockRadius}vh`,
-            rotate: `calc(90deg - ${minuteAngle}deg)`
-        }}
-        className='absolute left-[50%] top-[50%] translate-x-[-50%] translate-y-[-100%] origin-bottom border border-neutral-300 bg-black z-20 opacity-25' 
-        />}
         
         {/* Second Hand */}
         {showSecondHand && <div 
@@ -337,9 +390,10 @@ const Clock = () => {
             style={{
                 width: `${dragCircleWidth}vh`,
                 height: `${dragCircleWidth}vh`,
-                translate: `calc(-50% + ${secondHandWidth * clockWidth / 250}vh)`
+                translate: `calc(-50% + ${secondHandWidth * clockWidth / 250}vh)`,
+                opacity: showDragIcons ? `10%` : `0%`
             }}
-            className='relative mb-auto border-2 border-black border-dashed rounded-[50%] opacity-10'
+            className='relative mb-auto border-2 border-black border-dashed rounded-[50%]'
             draggable={true}
             onDragStart={(e) => {
                 setIsDragging(true);
@@ -376,10 +430,13 @@ const Clock = () => {
             }} />
             <span className='text-[84px]'>:</span>
             <input type='text' className='text-[84px] w-[100px]' maxLength={2} value={Math.floor(minute).toString().padStart(2, '0')} onChange={(e) => {
+                setHour(Math.floor(hour) + e.target.value / 60);
                 setMinute(e.target.value);
             }} />
             <span className='text-[48px] text-neutral-500'>:</span>
             <input type='text' className='text-[48px] w-[70px] text-neutral-500' maxLength={2} value={Math.floor(second).toString().padStart(2, '0')} onChange={(e) => {
+                setHour(Math.floor(hour) + (minute / 60) + e.target.value / 3600);
+                setMinute(Math.floor(minute) + e.target.value / 60);
                 setSecond(e.target.value);
             }} />
         </div>

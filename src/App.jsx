@@ -3,7 +3,7 @@ import Clock from './Clock'
 const App = () => {
   return (
     <div>
-      <Clock />
+      <Clock inputHour={3} inputMinute={30} inputSecond={0}/>
     </div>
   )
 }
